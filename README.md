@@ -11,7 +11,7 @@ so maybe you need to set ```export GO111MODULE=on```
 ### 
 build
 ```bash
-export GO111MODULE=on make build_linux
+make build_linux
 ```
 
 
