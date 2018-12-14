@@ -24,7 +24,7 @@ type States struct {
 }
 
 func (s *States) Save(path string) error {
-	blob, err := json.Marshal(s.States)
+	blob, err := json.Marshal(s)
 	if err != nil {
 		return err
 	}
@@ -38,7 +38,7 @@ func LoadStates(path string) (States, error) {
 	if err != nil {
 		return states, err
 	}
-	err = json.Unmarshal(blob, &states.States)
+	err = json.Unmarshal(blob, &states)
 	return states, err
 }
 

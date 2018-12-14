@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 )
 
+
 type Diff struct {
 	// oldStates
 	o States
@@ -16,6 +17,9 @@ type Diff struct {
 func TimeRange(a, b syscall.Timespec) float64 {
 	return float64(a.Sec-b.Sec) + float64(a.Nsec-b.Nsec)/1e9
 }
+
+
+
 
 func NewDiff(a,o States) Diff{
 	return Diff{
@@ -33,7 +37,7 @@ func (d *Diff) getRate(asf State) float64 {
 	// if file is new
 	// means no rate
 	if !ok {
-		zap.S().Debugw("asf is new file", "source", asf.Source, "size", asf.Size)
+		zap.S().Infow("asf is new file", "source", asf.Source, "size", asf.Size)
 		return float64(asf.Size) / TimeRange(d.a.RecordAt, d.o.RecordAt)
 	}
 
@@ -50,10 +54,10 @@ func (d *Diff) getRate(asf State) float64 {
 	// 3# File No Change or File
 	if (asf.Size-osf.Size) <= 0 || mtRange <= 0 {
 		if (asf.Size - osf.Size) < 0 {
-			zap.S().Debugw("3# Size Reduce", "source", asf.Source, "asf_size", asf.Size, "osf_size", osf.Size)
+			zap.S().Infow("3# Size Reduce", "source", asf.Source, "asf_size", asf.Size, "osf_size", osf.Size)
 		}
 		if mtRange < 0 {
-			zap.S().Debugw("3# mtRange <0", "source", asf.Source, "omt", asf.ModifyAt, "osf_size", osf.ModifyAt)
+			zap.S().Infow("3# mtRange <0", "source", asf.Source, "omt", asf.ModifyAt, "osf_size", osf.ModifyAt)
 		}
 		return float64(0)
 	}
@@ -68,7 +72,7 @@ func (d *Diff)  getRotateAppendSize(asf, osf State) float64{
 	for _, path := range  files {
 		var stat syscall.Stat_t
 		if err := syscall.Stat(path, &stat); err != nil {
-			zap.S().Debugw("scan get file stat failed",
+			zap.S().Infow("	scan get file stat failed",
 				"file_path:", path,
 				"err", err,
 			)

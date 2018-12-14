@@ -1,17 +1,12 @@
 package main
 
-
 import (
-	"go.uber.org/zap"
 	"night-watch/cmd"
+	"runtime/pprof"
 )
 
 func main() {
-	cfg := zap.NewProductionConfig()
-	cfg.OutputPaths = []string{
-		"/tmp/nightwatch.log",
-	}
-	logger, _ := cfg.Build()
-	zap.ReplaceGlobals(logger)
 	cmd.Execute()
+	defer pprof.StopCPUProfile()
+
 }

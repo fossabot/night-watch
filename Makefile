@@ -8,4 +8,8 @@ BUILD_INFO=-ldflags "-X $(BUILD_INFO_IMPORT_PATH).commitSHA=$(GIT_SHA) -X $(BUIL
 
 .PHONY: build
 build_linux: build
-	CGO_ENABLED=0 GOOS=linux installsuffix=cgo go build -o ./bin/nightwatch ./main.go
+	CGO_ENABLED=0 GOOS=linux installsuffix=cgo go build -o ./build/nightwatch ./main.go
+
+build_mac: build
+	GOOS=darwin go build -o ./build/nightwatch-mac ./main.go
+
