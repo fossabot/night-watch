@@ -12,10 +12,6 @@ jobs:
     - setup_remote_docker:
         docker_layer_caching: true
 
-#    - restore_cache:
-#        keys:
-#        - venv-{{ checksum "Pipfile" }}
-#
     - run:
         name: Set up environment
         command: |
@@ -29,32 +25,19 @@ jobs:
           export GO111MODULE=on
           make build_linux
 
-#    - save_cache:
-#        key: venv-{{ checksum "Pipfile" }}
-#        paths:
-#        - "venv"
+    - deploy:
+        name: "Release Binary"
+        command: |
+          if [ -n "${CIRCLE_TAG}" ]; then
+            github-release release --user $CIRCLE_PROJECT_USERNAME \
+                --repo $CIRCLE_PROJECT_REPONAME \
+                --tag "v"${CIRCLE_TAG} \
 
-    - deploy:
-        name: "echo"
-        command: |
-          if [ "${CIRCLE_BRANCH}" == "ci" ]; then
-            echo "2"
-          fi
-    - deploy:
-        name: "Push image to Docker Hub"
-        command: |
-          if [ "${CIRCLE_BRANCH}" == "master" ]; then
-            docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
-            docker build . -t dashbase/dashbase-tools
-            docker push dashbase/dashbase-tools
-          elif [ "${CIRCLE_BRANCH}" == "develop" ]; then
-            docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
-            docker build . -t dashbase/dashbase-tools:dev
-            docker push dashbase/dashbase-tools:dev
-          elif [ -n "${CIRCLE_TAG}" ]; then
-            docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
-            docker build . -t dashbase/dashbase-tools:${CIRCLE_TAG:1}
-            docker push dashbase/dashbase-tools:${CIRCLE_TAG:1}
+            github-release upload --user $CIRCLE_PROJECT_USERNAME \
+                --repo $CIRCLE_PROJECT_REPONAME \
+                --tag "v"${CIRCLE_TAG} \
+                --name "nightwatch" \
+                --file "bin/nightwatch"
           fi
 workflows:
   version: 2
