@@ -37,7 +37,7 @@ jobs:
         name: "echo"
         command: |
           if [ "${CIRCLE_BRANCH}" == "ci" ]; then
-            echo "1"
+            echo "2"
           fi
     - deploy:
         name: "Push image to Docker Hub"
