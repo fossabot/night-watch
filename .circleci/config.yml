@@ -26,7 +26,8 @@ jobs:
     - run:
         name: make
         command: |
-          export GO111MODULE=on make build_linux
+          export GO111MODULE=on
+          make build_linux
 
 #    - save_cache:
 #        key: venv-{{ checksum "Pipfile" }}
