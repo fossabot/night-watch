@@ -31,11 +31,11 @@ jobs:
           if [ -n "${CIRCLE_TAG}" ]; then
             github-release release --user $CIRCLE_PROJECT_USERNAME \
                 --repo $CIRCLE_PROJECT_REPONAME \
-                --tag "v"${CIRCLE_TAG} \
+                --tag ${CIRCLE_TAG}
 
             github-release upload --user $CIRCLE_PROJECT_USERNAME \
                 --repo $CIRCLE_PROJECT_REPONAME \
-                --tag "v"${CIRCLE_TAG} \
+                --tag ${CIRCLE_TAG} \
                 --name "nightwatch" \
                 --file "bin/nightwatch"
           fi
