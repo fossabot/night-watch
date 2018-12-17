@@ -36,5 +36,9 @@ get 9931 - 9963 byte/s,   0.4 -- 0.7 %
 2. https://github.com/mattn/go-zglob
 ```
 - [ ] use https://github.com/karrick/godirwalk to improve performance
-
 - [ ] move script/create.go to nightwatch fakeCreate
+
+### How to release
+
+1. checkout your branch and execute `git tag v1.0.0`
+2. push your tag `git push origin v1.0.0`
