@@ -37,7 +37,7 @@ jobs:
                 --repo $CIRCLE_PROJECT_REPONAME \
                 --tag ${CIRCLE_TAG} \
                 --name "nightwatch" \
-                --file "bin/nightwatch"
+                --file "build/nightwatch"
           fi
 workflows:
   version: 2
