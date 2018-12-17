@@ -36,3 +36,5 @@ get 9931 - 9963 byte/s,   0.4 -- 0.7 %
 2. https://github.com/mattn/go-zglob
 ```
 - [ ] use https://github.com/karrick/godirwalk to improve performance
+
+- [ ] move script/create.go to nightwatch fakeCreate

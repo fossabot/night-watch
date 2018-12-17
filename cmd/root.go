@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"github.com/spf13/cobra"
-
 	"go.uber.org/zap"
 	"log"
 	"runtime/pprof"
@@ -17,17 +16,22 @@ var rootCmd = &cobra.Command{
 }
 
 var debug bool
+var isLogSave bool
+var logPath string
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "debug mode")
-	rootCmd.PersistentFlags().BoolVar(&debug, "log-path", false, "debug mode")
+	rootCmd.PersistentFlags().BoolVar(&isLogSave, "log", false, "save nightwatch log")
+	rootCmd.PersistentFlags().StringVar(&logPath, "log-path", "/tmp/nightwatch.log", "only when --log=true, save log to this path")
 
 }
 
 func initConfig() {
 	cfg := zap.NewProductionConfig()
-	cfg.OutputPaths = []string{
-		"/tmp/nightwatch.log",
+	if isLogSave {
+		cfg.OutputPaths = []string{
+			logPath,
+		}
 	}
 	if debug {
 		cfg.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
