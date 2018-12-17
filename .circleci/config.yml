@@ -1,0 +1,49 @@
+version: 2
+jobs:
+  build:
+    working_directory: /go/src/github.com/dashbase/night-watch
+    docker:
+    - image: circleci/golang:1.11
+
+    steps:
+
+    - checkout
+
+    - setup_remote_docker:
+        docker_layer_caching: true
+
+    - run:
+        name: Set up environment
+        command: |
+          curl -fsSL https://github.com/aktau/github-release/releases/download/v0.7.2/linux-amd64-github-release.tar.bz2 -o github-release.tar.bz2
+          tar -jxvf github-release.tar.bz2
+          sudo mv bin/linux/amd64/github-release /usr/bin/
+
+    - run:
+        name: make
+        command: |
+          export GO111MODULE=on
+          make build_linux
+
+    - deploy:
+        name: "Release Binary"
+        command: |
+          if [ -n "${CIRCLE_TAG}" ]; then
+            github-release release --user $CIRCLE_PROJECT_USERNAME \
+                --repo $CIRCLE_PROJECT_REPONAME \
+                --tag ${CIRCLE_TAG}
+
+            github-release upload --user $CIRCLE_PROJECT_USERNAME \
+                --repo $CIRCLE_PROJECT_REPONAME \
+                --tag ${CIRCLE_TAG} \
+                --name "nightwatch" \
+                --file "bin/nightwatch"
+          fi
+workflows:
+  version: 2
+  build-n-deploy:
+    jobs:
+    - build:
+        filters:
+          tags:
+            only: /^v.*/
