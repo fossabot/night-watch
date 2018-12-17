@@ -11,19 +11,23 @@ import (
 	"os"
 )
 
-
-
 var msgSize int
 var processSize int
 var writePath string
 var isFsync bool
-
-
+var rotate int
+var rotate_max int
 
 func writer(path string, msg []byte) {
 	time.Sleep(time.Microsecond * time.Duration(rand.Intn(1000)))
 	f, err := os.Create(path)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	count := 0
 	for {
+		count += 1
 		if err != nil {
 			log.Fatal(err)
 			return
@@ -41,13 +45,37 @@ func writer(path string, msg []byte) {
 			}
 		}
 		time.Sleep(time.Second)
+		if rotate > 0 {
+			if count == rotate {
+				count = 0
+				f.Close()
+
+				for i:= rotate_max -1;i>0; i-- {
+					if _, err := os.Stat(path + fmt.Sprintf(".%d", i)); !os.IsNotExist(err) {
+						os.Rename(
+							path + fmt.Sprintf(".%d", i),
+							path + fmt.Sprintf(".%d", i+1),
+						)
+					}
+				}
+
+				os.Rename(path, path+".1")
+				f, err = os.Create(path)
+				if err != nil {
+					log.Fatal(err)
+					return
+				}
+			}
+		}
 	}
-	f.Close()
+	defer f.Close()
 }
 
 func init() {
 	flag.IntVar(&msgSize, "msg-size", 100, "Message size per second")
 	flag.IntVar(&processSize, "process-size", 100, "How much process per second")
+	flag.IntVar(&rotate, "rotate", 0, "How long to rotate file")
+	flag.IntVar(&rotate_max, "rotate-filemax", 5, "How long to rotate file")
 	flag.BoolVar(&isFsync, "is-fsync", false, "make sure file is sync")
 	flag.StringVar(&writePath, "write-path", "/tmp", "Write file to a path")
 }
@@ -55,7 +83,7 @@ func init() {
 func main() {
 
 	flag.Parse()
-	fmt.Printf("path:%s ,%d process * %d bytes / second \n",writePath, processSize, msgSize)
+	fmt.Printf("path:%s ,%d process * %d bytes / second \n", writePath, processSize, msgSize)
 	var b bytes.Buffer
 	w := bufio.NewWriter(&b)
 
@@ -66,11 +94,10 @@ func main() {
 	w.Flush()
 	msg := b.Bytes()
 
-
 	for i := 1; i <= processSize; i++ {
-		go writer(fmt.Sprintf( writePath+ "/%d.log", i), msg)
+		go writer(fmt.Sprintf(writePath+"/%d.log", i), msg)
 	}
-	for  {
+	for {
 		time.Sleep(time.Second)
 	}
 }

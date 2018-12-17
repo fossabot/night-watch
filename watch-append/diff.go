@@ -23,6 +23,7 @@ type Diff struct {
 	o States
 	// actualStates
 	a      States
+	Pattern string
 	Result DiffResult
 }
 
@@ -33,10 +34,11 @@ func TimeRange(a, b syscall.Timespec) float64 {
 
 
 
-func NewDiff(a,o States) Diff{
+func NewDiff(a,o States, pattern string) Diff{
 	return Diff{
 		a:a,
 		o:o,
+		Pattern: pattern,
 		Result:DiffResult{
 			Speed: 0,
 			TotalSize: 0,
@@ -45,38 +47,64 @@ func NewDiff(a,o States) Diff{
 	}
 }
 
-func (d *Diff) diff(asf State) {
-	d.getRate(asf)
-	return
-}
+func (d *Diff) diff(asf *State, osf *State)  {
 
-// Deprecated
-func (d *Diff) getRate(asf State) float64 {
-	osf, ok := d.o.States[asf.INode]
+	// 1# if asf == nil, osf ==nil.
+	// emm is a error ..
+	if asf == nil && osf == nil {
+		zap.S().Info("0# asf and osf is nil")
+		return
+	}
 
-	// 1# NEW FILE
+
+	// 2# NEW FILE
 	// if file is new
 	// means no rate
-	if !ok {
-		zap.S().Infow("asf is new file", "source", asf.Source, "size", asf.Size)
+	if  asf !=nil && osf == nil{
+		zap.S().Debugf("asf is new file", "source", asf.Source, "size", asf.Size)
 		speed := float64(asf.Size) / TimeRange(d.a.RecordAt, d.o.RecordAt)
 		d.Result.add(asf.Size, speed)
-		return speed
+		return
+	}
+
+
+	// 3# ROTATE
+	// only once rotate can control
+	if asf ==nil && osf != nil {
+
+		// todo will simple to check
+		isOld := true
+		for _, a:= range d.a.States{
+			if a.Source == osf.Source {
+				isOld = false
+				break
+			}
+		}
+
+		if isOld {
+			zap.S().Infow("Ignore old state,",
+				"osf.source", osf.Source,
+				"pattern", d.Pattern)
+			d.Result.add(0,0)
+			return
+		}
+
+
+		state, err := FoundFileByInode(osf.Source, osf.INode)
+		if err != nil {
+			zap.S().Info(err.Error())
+			d.Result.add(0,0)
+			return
+		}
+		size := state.Size - osf.Size
+		speed := float64(size) / TimeRange(state.ModifyAt, osf.ModifyAt)
+		d.Result.add(size, speed)
+		return
 	}
 
 	// modify change
 	mtRange := TimeRange(asf.ModifyAt, osf.ModifyAt)
-
-	// 2# ROTATE
-	// only once rotate can control
-	if asf.INode != osf.INode {
-		size := d.getRotateAppendSize(asf, osf)
-		speed := float64(size) / mtRange
-		d.Result.add(size, speed)
-		return speed
-	}
-
-	// 3# File No Change or File
+	// 4# File No Change or File
 	if (asf.Size-osf.Size) <= 0 || mtRange <= 0 {
 		if (asf.Size - osf.Size) < 0 {
 			zap.S().Infow("3# Size Reduce", "source", asf.Source, "asf_size", asf.Size, "osf_size", osf.Size)
@@ -85,15 +113,18 @@ func (d *Diff) getRate(asf State) float64 {
 			zap.S().Infow("3# mtRange <0", "source", asf.Source, "omt", asf.ModifyAt, "osf_size", osf.ModifyAt)
 		}
 		d.Result.add(0,0)
-		return float64(0)
+		return
 	}
 
 
-	// 4# File Append
+	// 5# File Append
 	speed := float64(asf.Size - osf.Size) / mtRange
 	d.Result.add(asf.Size - osf.Size, speed)
-	return speed
+	return
 }
+
+
+
 
 func (d *Diff)  getRotateAppendSize(asf, osf State) int64{
 	files, _ := filepath.Glob(asf.Source + "*")
@@ -120,7 +151,53 @@ func (d *Diff)  getRotateAppendSize(asf, osf State) int64{
 }
 
 func (d *Diff) Diff() {
-	for _, asf := range d.a.States {
-		d.diff(asf)
+	// actualStates Set
+	asSet := map[uint64]bool{}
+	for k := range d.a.States {
+		asSet[k] = true
 	}
+
+	// oldStates Set
+	osSet := map[uint64]bool{}
+	for k := range d.o.States {
+		osSet[k] = true
+	}
+
+
+
+
+	asSet_union_osSet:= map[uint64]bool{}
+	// in actualStatesoldStates Set, not in oldStates Set
+	in_asSet_not_osSet:= map[uint64]bool{}
+	not_asSet_in_osSet := map[uint64]bool{}
+	for k := range asSet {
+		if _, ok := osSet[k];ok {
+			asSet_union_osSet[k] = true
+		}else {
+			in_asSet_not_osSet[k] = true
+		}
+	}
+	for k := range osSet {
+		if _, ok := asSet[k];!ok {
+			not_asSet_in_osSet[k] = true
+		}
+	}
+
+	for k:= range asSet_union_osSet {
+		osf:= d.o.States[k]
+		asf:= d.a.States[k]
+		d.diff(&asf, &osf)
+	}
+
+	for k := range in_asSet_not_osSet {
+		asf:= d.a.States[k]
+		d.diff(&asf, nil)
+	}
+
+	for k := range not_asSet_in_osSet {
+		osf:= d.o.States[k]
+		d.diff(nil, &osf)
+	}
+
+
 }
