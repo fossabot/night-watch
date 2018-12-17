@@ -13,3 +13,5 @@ build_linux: build
 build_mac: build
 	GOOS=darwin go build $(BUILD_INFO) -o ./build/nightwatch-mac ./main.go
 
+build_fakecreate_linux:
+	CGO_ENABLED=0 GOOS=linux installsuffix=cgo go build $(BUILD_INFO) -o ./build/fake-create ./scripts/create.go

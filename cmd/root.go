@@ -28,6 +28,7 @@ func init() {
 
 func initConfig() {
 	cfg := zap.NewProductionConfig()
+	cfg.Level = zap.NewAtomicLevelAt(zap.ErrorLevel)
 	if isLogSave {
 		cfg.OutputPaths = []string{
 			logPath,

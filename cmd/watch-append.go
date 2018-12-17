@@ -86,8 +86,8 @@ func create_influx_format_outout(result watch_append.DiffResult, spend int64) st
 	str.Write([]byte(fmt.Sprintf("%s=%f,", "file-append-speed", result.Speed)))
 	str.Write([]byte(fmt.Sprintf("%s=%d,", "file-append-total-size", result.TotalSize)))
 	str.Write([]byte(fmt.Sprintf("%s=%d,", "scan-file-count", result.Count)))
-	str.Write([]byte(fmt.Sprintf("%s=%d,", "run-spent-time-nano", spend)))
-	str.Write([]byte(fmt.Sprintf("%s=%f,", "run-spent-time-nano", float64(spend) / 1e9)))
+	str.Write([]byte(fmt.Sprintf("%s=%d,", "run-spent-time-nanosecond", spend)))
+	str.Write([]byte(fmt.Sprintf("%s=%f,", "run-spent-time-second", float64(spend) / 1e9)))
 
 	// remove last char ','
 	return strings.TrimSuffix(str.String(), ",")
