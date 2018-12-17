@@ -76,7 +76,7 @@ func create_influx_format_outout(result watch_append.DiffResult, spend int64) st
 	str := strings.Builder{}
 
 	// measurement
-	str.Write([]byte("nightwatch-metric,"))
+	str.Write([]byte("nightwatch-metric"))
 
 	// tag_set
 	str.Write([]byte(" "))
