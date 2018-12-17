@@ -21,6 +21,7 @@ type State struct {
 type States struct {
 	States   map[uint64]State `json:"states"`
 	RecordAt syscall.Timespec `json:"record_at"`
+	TotalSize int64            `json:"total_size"`
 }
 
 func (s *States) Save(path string) error {
@@ -45,7 +46,12 @@ func LoadStates(path string) (States, error) {
 func NewStates() States {
 	return States{
 		States: map[uint64]State{},
+		TotalSize: 0,
 	}
+}
+
+func (s *States) SetTotalSize(new int64) {
+	s.TotalSize = new
 }
 
 func (s *States) Scan(pattern string) error {
