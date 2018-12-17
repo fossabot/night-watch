@@ -60,7 +60,7 @@ var watchAppendCmd = &cobra.Command{
 
 
 		spend := time.Now().UnixNano() - start_at
-		println(create_influx_format_outout(diff.Result, spend))
+		fmt.Fprintln(os.Stdout, create_influx_format_outout(diff.Result, spend))
 	},
 }
 
