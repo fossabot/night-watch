@@ -6,12 +6,24 @@ import (
 	"path/filepath"
 )
 
+type DiffResult struct {
+	Speed float64
+	TotalSize int64
+	Count  int64
+}
+
+func (dr *DiffResult) add(size int64, speed float64) {
+	dr.Speed += speed
+	dr.TotalSize += size
+	dr.Count += 1
+}
 
 type Diff struct {
 	// oldStates
 	o States
 	// actualStates
-	a States
+	a      States
+	Result DiffResult
 }
 
 func TimeRange(a, b syscall.Timespec) float64 {
@@ -25,11 +37,20 @@ func NewDiff(a,o States) Diff{
 	return Diff{
 		a:a,
 		o:o,
+		Result:DiffResult{
+			Speed: 0,
+			TotalSize: 0,
+			Count: 0,
+		},
 	}
 }
 
+func (d *Diff) diff(asf State) {
+	d.getRate(asf)
+	return
+}
 
-
+// Deprecated
 func (d *Diff) getRate(asf State) float64 {
 	osf, ok := d.o.States[asf.INode]
 
@@ -38,7 +59,9 @@ func (d *Diff) getRate(asf State) float64 {
 	// means no rate
 	if !ok {
 		zap.S().Infow("asf is new file", "source", asf.Source, "size", asf.Size)
-		return float64(asf.Size) / TimeRange(d.a.RecordAt, d.o.RecordAt)
+		speed := float64(asf.Size) / TimeRange(d.a.RecordAt, d.o.RecordAt)
+		d.Result.add(asf.Size, speed)
+		return speed
 	}
 
 	// modify change
@@ -48,7 +71,9 @@ func (d *Diff) getRate(asf State) float64 {
 	// only once rotate can control
 	if asf.INode != osf.INode {
 		size := d.getRotateAppendSize(asf, osf)
-		return size / mtRange
+		speed := float64(size) / mtRange
+		d.Result.add(size, speed)
+		return speed
 	}
 
 	// 3# File No Change or File
@@ -59,15 +84,18 @@ func (d *Diff) getRate(asf State) float64 {
 		if mtRange < 0 {
 			zap.S().Infow("3# mtRange <0", "source", asf.Source, "omt", asf.ModifyAt, "osf_size", osf.ModifyAt)
 		}
+		d.Result.add(0,0)
 		return float64(0)
 	}
 
 
 	// 4# File Append
-	return float64(asf.Size - osf.Size) / mtRange
+	speed := float64(asf.Size - osf.Size) / mtRange
+	d.Result.add(asf.Size - osf.Size, speed)
+	return speed
 }
 
-func (d *Diff)  getRotateAppendSize(asf, osf State) float64{
+func (d *Diff)  getRotateAppendSize(asf, osf State) int64{
 	files, _ := filepath.Glob(asf.Source + "*")
 	for _, path := range  files {
 		var stat syscall.Stat_t
@@ -79,7 +107,7 @@ func (d *Diff)  getRotateAppendSize(asf, osf State) float64{
 			continue
 		}
 		if stat.Ino == osf.INode {
-			return float64(asf.Size + stat.Size - osf.Size)
+			return asf.Size + stat.Size - osf.Size
 		}
 	}
 	zap.S().Infow("2# Can't found inode",
@@ -88,14 +116,11 @@ func (d *Diff)  getRotateAppendSize(asf, osf State) float64{
 		"osf.mtime", osf.ModifyAt,
 		"asf.mtime", asf.ModifyAt,
 	)
-	return float64(asf.Size)
+	return asf.Size
 }
 
-func (d *Diff) GetTotalRate() float64{
-	totalRate := float64(0)
-
+func (d *Diff) Diff() {
 	for _, asf := range d.a.States {
-		totalRate = totalRate + d.getRate(asf)
+		d.diff(asf)
 	}
-	return totalRate
 }

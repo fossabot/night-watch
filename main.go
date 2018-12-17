@@ -1,8 +1,8 @@
 package main
 
 import (
-	"night-watch/cmd"
 	"runtime/pprof"
+	"night-watch/cmd"
 )
 
 func main() {
