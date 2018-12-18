@@ -101,6 +101,7 @@ func create_influx_format_outout( result watch_append.DiffResult, metric watch_a
 	str.Write([]byte(fmt.Sprintf("%s=%d,", "as_count", metric.AsCount)))
 	str.Write([]byte(fmt.Sprintf("%s=%d,", "os_count", metric.OsCount)))
 	str.Write([]byte(fmt.Sprintf("%s=%d,", "as_union_os_count", metric.AsUnionOs)))
+	str.Write([]byte(fmt.Sprintf("%s=%d,", "deepfind_count", metric.DeepFindCount)))
 
 	str.Write([]byte(fmt.Sprintf("%s=%d,", "diff-new", metric.DiffNewFile.Get())))
 	str.Write([]byte(fmt.Sprintf("%s=%d,", "diff-rotate", metric.DiffRotate.Get())))

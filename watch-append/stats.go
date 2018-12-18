@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 	"time"
 	"go.uber.org/zap"
-	"errors"
-	"fmt"
 	"night-watch/utils/match"
 )
 
@@ -19,6 +17,7 @@ type State struct {
 	CreateAt syscall.Timespec `json:"created_at"`
 	ModifyAt syscall.Timespec `json:"modify_at"`
 	RecordAt syscall.Timespec `json:"record_at"`
+
 }
 
 type States struct {
@@ -80,7 +79,6 @@ func (s *States) Scan(pattern string, excludeFiles []string, metric *WatchMetric
 	zap.S().Debugw("begin scan", "pattern", pattern)
 	for _, path := range files {
 		filename := filepath.Base(path)
-
 		if MatchAny(excludeMatch, filename){
 			metric.ExcludeCount += 1
 			continue
@@ -105,22 +103,4 @@ func (s *States) Scan(pattern string, excludeFiles []string, metric *WatchMetric
 	}
 	zap.S().Debugw("end scan", "files_count", len(files))
 	return nil
-}
-
-func FoundFileByInode(source string, inode uint64)(State, error){
-	files, _ := filepath.Glob(source + "*")
-	for _, path := range  files {
-		var stat syscall.Stat_t
-		if err := syscall.Stat(path, &stat); err != nil {
-			zap.S().Infow("	scan get file stat failed",
-				"file_path:", path,
-				"err", err,
-			)
-			continue
-		}
-		if stat.Ino == inode  {
-			return SysStatToState(source, stat)	, nil
-		}
-	}
-	return State{}, errors.New(fmt.Sprintf("Can't found inode: %d, last_source: %s", inode, source))
 }

@@ -4,6 +4,8 @@ import (
 	"syscall"
 	"go.uber.org/zap"
 	"path/filepath"
+	"errors"
+	"fmt"
 )
 
 type DiffResult struct {
@@ -26,6 +28,7 @@ type Diff struct {
 	Pattern string
 	Result  DiffResult
 	Metric  *WatchMetric
+	allFileCache map[uint64]State
 }
 
 func TimeRange(a, b syscall.Timespec) float64 {
@@ -44,6 +47,7 @@ func NewDiff(a, o States, pattern string, metric *WatchMetric) Diff {
 			Count:     0,
 		},
 		Metric: metric,
+		allFileCache: map[uint64]State{},
 	}
 }
 
@@ -89,7 +93,7 @@ func (d *Diff) diff(asf *State, osf *State) {
 			return
 		}
 
-		state, err := FoundFileByInode(osf.Source, osf.INode)
+		state, err := d.FindFileByInode(osf.Source, osf.INode)
 		if err != nil {
 			zap.S().Info(err.Error())
 			d.Result.add(0, 0)
@@ -199,4 +203,49 @@ func (d *Diff) Diff() {
 		osf := d.o.States[k]
 		d.diff(nil, &osf)
 	}
+}
+
+
+func (d *Diff) DeepFindFileByInode(source string, inode uint64)(State, error){
+	if len(d.allFileCache) == 0 {
+		path := filepath.Dir(source)
+		files, _ := filepath.Glob(path + "*")
+		d.Metric.DeepFindCount = len(files)
+		for _, path := range files {
+			var stat syscall.Stat_t
+			if err := syscall.Stat(path, &stat); err != nil {
+				zap.S().Infow("	DeepFind get file stat failed",
+					"file_path:", path,
+					"err", err,
+				)
+				continue
+			}
+			d.allFileCache[stat.Ino] = SysStatToState(path, stat)
+		}
+	}
+	if val, ok := d.allFileCache[inode]; ok {
+		return val, nil
+	}
+	return State{}, errors.New(fmt.Sprintf("DeepFind, Can't found inode: %d, last_source: %s", inode, source))
+}
+
+func (d *Diff)  FindFileByInode(source string, inode uint64)(State, error){
+	if len(d.allFileCache) != 0 {
+		return d.DeepFindFileByInode(source, inode)
+	}
+	files, _ := filepath.Glob(source + "*")
+	for _, path := range  files {
+		var stat syscall.Stat_t
+		if err := syscall.Stat(path, &stat); err != nil {
+			zap.S().Infow("	Find get file stat failed",
+				"file_path:", path,
+				"err", err,
+			)
+			continue
+		}
+		if stat.Ino == inode  {
+			return SysStatToState(source, stat)	, nil
+		}
+	}
+	return d.DeepFindFileByInode(source, inode)
 }
