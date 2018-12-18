@@ -5,8 +5,6 @@ import (
 	"os"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
-	"log"
-	"runtime/pprof"
 )
 
 var rootCmd = &cobra.Command{
@@ -36,12 +34,6 @@ func initConfig() {
 	}
 	if debug {
 		cfg.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
-
-		f, err := os.Create("./cpu.pprof")
-		if err != nil {
-			log.Fatal(err)
-		}
-		pprof.StartCPUProfile(f)
 	}
 	logger, _ := cfg.Build()
 	zap.ReplaceGlobals(logger)
