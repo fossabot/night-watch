@@ -209,7 +209,7 @@ func (d *Diff) Diff() {
 func (d *Diff) DeepFindFileByInode(source string, inode uint64)(State, error){
 	if len(d.allFileCache) == 0 {
 		path := filepath.Dir(source)
-		files, _ := filepath.Glob(path + "*")
+		files, _ := filepath.Glob(path + "/*")
 		d.Metric.DeepFindCount = len(files)
 		for _, path := range files {
 			var stat syscall.Stat_t
