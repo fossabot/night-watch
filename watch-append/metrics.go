@@ -8,6 +8,7 @@ type WatchMetric struct {
 	AsCount        int
 	OsCount        int
 	AsUnionOs      int
+	DeepFindCount  int
 
 	StartAt int64
 	Spent   int64
@@ -17,9 +18,13 @@ type WatchMetric struct {
 	DiffNoChange MetricInt
 	DiffAppend   MetricInt
 
+
 	DiffNullError       MetricInt
 	DiffRotateIgnore    MetricInt
+	DiffRotateDeepIgnore    MetricInt
 	DiffRotateNotExists MetricInt
+
+
 }
 
 func NewWatchMetric() WatchMetric {
