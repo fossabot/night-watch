@@ -16,6 +16,7 @@ var processSize int
 var writePath string
 var isFsync bool
 var rotate int
+var lines int
 var rotate_max int
 
 func writer(path string, msg []byte) {
@@ -32,11 +33,16 @@ func writer(path string, msg []byte) {
 			log.Fatal(err)
 			return
 		}
-		_, err = f.Write(msg)
-		if err != nil {
-			log.Fatal(err)
-			return
+
+		for i := 0; i < lines; i++ {
+			_, err = f.Write(msg)
+			if err != nil {
+				log.Fatal(err)
+				return
+			}
 		}
+
+
 		if isFsync {
 			err = f.Sync()
 			if err != nil {
@@ -44,7 +50,8 @@ func writer(path string, msg []byte) {
 				return
 			}
 		}
-		time.Sleep(time.Second)
+
+
 		if rotate > 0 {
 			if count == rotate {
 				count = 0
@@ -67,12 +74,15 @@ func writer(path string, msg []byte) {
 				}
 			}
 		}
+
+		time.Sleep(time.Second)
 	}
 	defer f.Close()
 }
 
 func init() {
 	flag.IntVar(&msgSize, "msg-size", 100, "Message size per second")
+	flag.IntVar(&lines, "lines", 10, "Message line  per second")
 	flag.IntVar(&processSize, "process-size", 100, "How much process per second")
 	flag.IntVar(&rotate, "rotate", 0, "How long to rotate file")
 	flag.IntVar(&rotate_max, "rotate-filemax", 5, "How long to rotate file")
