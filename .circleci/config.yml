@@ -13,6 +13,11 @@ jobs:
         docker_layer_caching: true
 
     - run:
+        name: Run tests
+        command: |
+          GO111MODULE=on go test -v ./...
+
+    - run:
         name: Set up environment
         command: |
           curl -fsSL https://github.com/aktau/github-release/releases/download/v0.7.2/linux-amd64-github-release.tar.bz2 -o github-release.tar.bz2
@@ -22,8 +27,7 @@ jobs:
     - run:
         name: make
         command: |
-          export GO111MODULE=on
-          make build_linux
+          GO111MODULE=on make build_linux
 
     - deploy:
         name: "Release Binary"
