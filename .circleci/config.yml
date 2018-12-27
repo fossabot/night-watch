@@ -15,7 +15,7 @@ jobs:
     - run:
         name: Run tests
         command: |
-          GO111MODULE=on go test -v ./...
+          GO111MODULE=on go test -coverprofile=coverage.txt -covermode=atomic  -v ./...
 
     - run:
         name: Set up environment
@@ -29,8 +29,15 @@ jobs:
         command: |
           GO111MODULE=on make build_linux
 
+    - run:
+        name: Upload codecov
+        when: on_success
+        command: |
+          bash <(curl -s https://codecov.io/bash)
+
     - deploy:
         name: "Release Binary"
+        when: on_success
         command: |
           if [ -n "${CIRCLE_TAG}" ]; then
             github-release release --user $CIRCLE_PROJECT_USERNAME \
@@ -43,6 +50,7 @@ jobs:
                 --name "nightwatch" \
                 --file "build/nightwatch"
           fi
+
 workflows:
   version: 2
   build-n-deploy:
