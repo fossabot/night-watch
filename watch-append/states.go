@@ -8,6 +8,7 @@ import (
 	"time"
 	"go.uber.org/zap"
 	"night-watch/utils/match"
+	"os"
 )
 
 type State struct {
@@ -63,21 +64,24 @@ func MatchAny(matchers []match.Matcher, text string) bool {
 	return false
 }
 
-func (s *States) Scan(pattern string, excludeFiles []string, metric *WatchMetric) error {
-	files, _ := filepath.Glob(pattern)
-	metric.GlobMatchCount = len(files)
-
-	var excludeMatch []match.Matcher
-	for _, s := range excludeFiles{
-		excludeMatch = append(excludeMatch, match.MustCompile(s))
-	}
-
-
-	zap.S().Debugw("begin scan", "pattern", pattern)
+func (s *States) scan(files []string, excludeMatch []match.Matcher, metric *WatchMetric) error {
 	for _, path := range files {
 		filename := filepath.Base(path)
 		if MatchAny(excludeMatch, filename){
 			metric.ExcludeCount += 1
+			continue
+		}
+
+		fi, err := os.Stat(path)
+		if err != nil {
+			zap.S().Debugw("scan get file os.stat failed",
+				"file_path:", path,
+				"err", err,
+			)
+			continue
+		}
+
+		if fi.IsDir() {
 			continue
 		}
 
@@ -98,6 +102,19 @@ func (s *States) Scan(pattern string, excludeFiles []string, metric *WatchMetric
 		Sec:  now / 1e9,
 		Nsec: now % 1e9,
 	}
+	return nil
+}
+
+
+func (s *States) Scan(pattern string, excludeFiles []string, metric *WatchMetric) error {
+	files, _ := filepath.Glob(pattern)
+	metric.GlobMatchCount = len(files)
+	var excludeMatches []match.Matcher
+	for _, s := range excludeFiles{
+		excludeMatches = append(excludeMatches, match.MustCompile(s))
+	}
+	zap.S().Debugw("begin scan", "pattern", pattern)
+	s.scan(files, excludeMatches,metric)
 	zap.S().Debugw("end scan", "files_count", len(files))
 	return nil
 }
