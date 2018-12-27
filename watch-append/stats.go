@@ -52,9 +52,6 @@ func NewStates() States {
 	}
 }
 
-func (s *States) SetTotalSize(new int64) {
-	s.TotalSize = new
-}
 
 // MatchAny checks if the text matches any of the regular expressions
 func MatchAny(matchers []match.Matcher, text string) bool {

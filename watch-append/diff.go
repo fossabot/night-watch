@@ -35,15 +35,16 @@ func TimeRange(a, b syscall.Timespec) float64 {
 	return float64(a.Sec-b.Sec) + float64(a.Nsec-b.Nsec)/1e9
 }
 
-
-func NewDiff(a, o States, pattern string, metric *WatchMetric) Diff {
+// Create New Diff and sub-DiffResult
+// DiffResult TotalSize inherit oldStatus TotalSize
+func NewDiff(a States, o States, pattern string, metric *WatchMetric) Diff {
 	return Diff{
 		a:       a,
 		o:       o,
 		Pattern: pattern,
 		Result: DiffResult{
 			Speed:     0,
-			TotalSize: 0,
+			TotalSize: o.TotalSize,
 			Count:     0,
 		},
 		Metric: metric,
@@ -167,39 +168,39 @@ func (d *Diff) Diff() {
 		osSet[k] = true
 	}
 
-	asSet_union_osSet := map[uint64]bool{}
+	assetUnionOsset := map[uint64]bool{}
 	// in actualStatesoldStates Set, not in oldStates Set
-	in_asSet_not_osSet := map[uint64]bool{}
-	not_asSet_in_osSet := map[uint64]bool{}
+	inAssetNotOsset := map[uint64]bool{}
+	notAssetInOsset := map[uint64]bool{}
 	for k := range asSet {
 		if _, ok := osSet[k]; ok {
-			asSet_union_osSet[k] = true
+			assetUnionOsset[k] = true
 		} else {
-			in_asSet_not_osSet[k] = true
+			inAssetNotOsset[k] = true
 		}
 	}
 	for k := range osSet {
 		if _, ok := asSet[k]; !ok {
-			not_asSet_in_osSet[k] = true
+			notAssetInOsset[k] = true
 		}
 	}
 
 	d.Metric.AsCount = len(asSet)
 	d.Metric.OsCount = len(osSet)
-	d.Metric.AsUnionOs = len(asSet_union_osSet)
+	d.Metric.AsUnionOs = len(assetUnionOsset)
 
-	for k := range asSet_union_osSet {
+	for k := range assetUnionOsset {
 		osf := d.o.States[k]
 		asf := d.a.States[k]
 		d.diff(&asf, &osf)
 	}
 
-	for k := range in_asSet_not_osSet {
+	for k := range inAssetNotOsset {
 		asf := d.a.States[k]
 		d.diff(&asf, nil)
 	}
 
-	for k := range not_asSet_in_osSet {
+	for k := range notAssetInOsset {
 		osf := d.o.States[k]
 		d.diff(nil, &osf)
 	}

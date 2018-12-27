@@ -49,7 +49,7 @@ func run() {
 		asf := watch_append.NewStates()
 		asf.Scan(pattern, excludeFiles, &metric)
 		asf.Save(metaPath)
-		fmt.Fprintln(os.Stdout, create_influx_format_outout(watch_append.DiffResult{}, metric))
+		fmt.Fprintln(os.Stdout, createInfluxFormatOutout(watch_append.DiffResult{}, metric))
 		return
 	}
 
@@ -65,15 +65,16 @@ func run() {
 
 	diff := watch_append.NewDiff(asf, osf, pattern, &metric)
 	diff.Diff()
-	diff.Result.TotalSize += osf.TotalSize
-	asf.SetTotalSize(diff.Result.TotalSize)
+
+	asf.TotalSize = diff.Result.TotalSize
 	asf.Save(metaPath)
+
 	metric.End()
 
-	fmt.Fprintln(os.Stdout, create_influx_format_outout(diff.Result, metric))
+	fmt.Fprintln(os.Stdout, createInfluxFormatOutout(diff.Result, metric))
 }
 
-func create_influx_format_outout( result watch_append.DiffResult, metric watch_append.WatchMetric) string {
+func createInfluxFormatOutout( result watch_append.DiffResult, metric watch_append.WatchMetric) string {
 	//	weather,location=us-midwest temperature=82 1465839830100400200
 	//  	|    -------------------- --------------  |
 	//  	|             |             |             |

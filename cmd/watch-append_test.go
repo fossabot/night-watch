@@ -7,9 +7,18 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"log"
 )
 
-var testpath = "/tmp/dashbase-test"
+var testpath string
+func init(){
+	tmp, err := ioutil.TempDir("", "example")
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	testpath = tmp
+}
 
 func setupTestCase(t *testing.T) {
 	t.Log("setup test case")
@@ -77,8 +86,7 @@ func TestAppend(t *testing.T) {
 
 	diff := watch_append.NewDiff(asf, osf, pattern, &metric)
 	diff.Diff()
-	diff.Result.TotalSize += osf.TotalSize
-	asf.SetTotalSize(diff.Result.TotalSize)
+	asf.TotalSize = diff.Result.TotalSize
 	asf.Save(testpath + string(os.PathSeparator) + "status.txt")
 	assert.Equal(t, int64(11), diff.Result.TotalSize)
 	assert.Equal(t, int64(2), diff.Result.Count)
