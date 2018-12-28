@@ -1,4 +1,6 @@
 ## Night Watch
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fdashbase%2Fnight-watch.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fdashbase%2Fnight-watch?ref=badge_shield)
+
 
 
 
@@ -42,3 +44,7 @@ get 9931 - 9963 byte/s,   0.4 -- 0.7 %
 
 1. checkout your branch and execute `git tag v1.0.0`
 2. push your tag `git push origin v1.0.0`
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fdashbase%2Fnight-watch.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fdashbase%2Fnight-watch?ref=badge_large)
