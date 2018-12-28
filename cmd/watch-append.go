@@ -8,6 +8,8 @@ import (
 	"time"
 	"os"
 	"go.uber.org/zap"
+
+	"io"
 )
 
 var pattern string
@@ -32,7 +34,7 @@ var watchAppendCmd = &cobra.Command{
 	Long:  `watch-append`,
 	Run: func(cmd *cobra.Command, args []string) {
 		for {
-			run()
+			run(cmd.OutOrStdout())
 			if isOnce {
 				return
 			}
@@ -41,7 +43,7 @@ var watchAppendCmd = &cobra.Command{
 	},
 }
 
-func run() {
+func run(out io.Writer) {
 	metric := watch_append.NewWatchMetric()
 	metric.Start()
 	// first run watch append, create first state and save
@@ -49,7 +51,7 @@ func run() {
 		asf := watch_append.NewStates()
 		asf.Scan(pattern, excludeFiles, &metric)
 		asf.Save(metaPath)
-		fmt.Fprintln(os.Stdout, createInfluxFormatOutout(watch_append.DiffResult{}, metric))
+		fmt.Fprintln(out, createInfluxFormatOutout(watch_append.DiffResult{}, metric))
 		return
 	}
 
@@ -71,7 +73,7 @@ func run() {
 
 	metric.End()
 
-	fmt.Fprintln(os.Stdout, createInfluxFormatOutout(diff.Result, metric))
+	fmt.Fprintln(out, createInfluxFormatOutout(diff.Result, metric))
 }
 
 func createInfluxFormatOutout( result watch_append.DiffResult, metric watch_append.WatchMetric) string {

@@ -131,30 +131,6 @@ func (d *Diff) diff(asf *State, osf *State) {
 	return
 }
 
-func (d *Diff) getRotateAppendSize(asf, osf State) int64 {
-	files, _ := filepath.Glob(asf.Source + "*")
-	for _, path := range files {
-		var stat syscall.Stat_t
-		if err := syscall.Stat(path, &stat); err != nil {
-			zap.S().Infow("	scan get file stat failed",
-				"file_path:", path,
-				"err", err,
-			)
-			continue
-		}
-		if stat.Ino == osf.INode {
-			return asf.Size + stat.Size - osf.Size
-		}
-	}
-	zap.S().Infow("2# Can't found inode",
-		"osf.inode", osf.INode,
-		"osf.size", osf.Size,
-		"osf.mtime", osf.ModifyAt,
-		"asf.mtime", asf.ModifyAt,
-	)
-	return asf.Size
-}
-
 func (d *Diff) Diff() {
 	// actualStates Set
 	asSet := map[uint64]bool{}
